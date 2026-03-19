@@ -1,46 +1,48 @@
-import 'package:dio/dio.dart';
-import 'package:get/get.dart' hide Response;
-import '../data/constants.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/utils/logger.dart';
 import '../models/api_response.dart';
 import '../models/user_model.dart';
-import '../services/api_service.dart';
+import '../services/supabase_service.dart';
 import '../services/storage_service.dart';
 
 class AuthRepository {
-  final ApiService _apiService = Get.find<ApiService>();
+  final SupabaseService _supabaseService = Get.find<SupabaseService>();
   final StorageService _storageService = Get.find<StorageService>();
 
+  static const String _tag = 'AuthRepository';
+
   Future<ApiResponse<UserModel>> login(String email, String password) async {
+    AppLogger.info('Attempting login for: $email', tag: _tag);
     try {
-      final response = await _apiService.post(
-        AppConstants.loginEndpoint,
-        data: {
-          'username': email,
-          'password': password,
-        },
+      final response = await _supabaseService.auth.signInWithPassword(
+        email: email,
+        password: password,
       );
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final token = data['access_token'] as String;
-        await _storageService.saveToken(token);
-        
+      if (response.user != null) {
+        AppLogger.info('Login successful for: $email', tag: _tag);
         final user = UserModel(
-          id: data['user_id'] ?? 0,
-          email: email,
+          id: response.user!.id.hashCode,
+          email: response.user!.email ?? email,
+          name: response.user!.userMetadata?['name'] as String?,
         );
-        
-        return ApiResponse.success(user, statusCode: response.statusCode);
+
+        if (response.session?.accessToken != null) {
+          await _storageService.saveToken(response.session!.accessToken);
+        }
+
+        return ApiResponse.success(user);
       }
-      
-      return ApiResponse.error(
-        'Login failed',
-        statusCode: response.statusCode,
-      );
-    } on DioException catch (e) {
-      return _handleDioError(e);
-    } catch (e) {
-      return ApiResponse.error('An unexpected error occurred');
+
+      AppLogger.warning('Login failed - no user returned', tag: _tag);
+      return ApiResponse.error('Login failed');
+    } on AuthException catch (e) {
+      AppLogger.error('Auth exception during login', tag: _tag, error: e.message);
+      return ApiResponse.error(e.message);
+    } catch (e, stackTrace) {
+      AppLogger.error('Unexpected error during login', tag: _tag, error: e, stackTrace: stackTrace);
+      return ApiResponse.error('An unexpected error occurred: ${e.toString()}');
     }
   }
 
@@ -49,61 +51,43 @@ class AuthRepository {
     String password, {
     String? name,
   }) async {
+    AppLogger.info('Attempting registration for: $email', tag: _tag);
     try {
-      final response = await _apiService.post(
-        AppConstants.registerEndpoint,
-        data: {
-          'email': email,
-          'password': password,
-          if (name != null) 'name': name,
-        },
+      final response = await _supabaseService.auth.signUp(
+        email: email,
+        password: password,
+        data: name != null ? {'name': name} : null,
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
-        final user = UserModel.fromJson(data);
-        return ApiResponse.success(user, statusCode: response.statusCode);
+      if (response.user != null) {
+        AppLogger.info('Registration successful for: $email', tag: _tag);
+        final user = UserModel(
+          id: response.user!.id.hashCode,
+          email: response.user!.email ?? email,
+          name: name,
+        );
+        return ApiResponse.success(user);
       }
-      
-      return ApiResponse.error(
-        'Registration failed',
-        statusCode: response.statusCode,
-      );
-    } on DioException catch (e) {
-      return _handleDioError(e);
-    } catch (e) {
-      return ApiResponse.error('An unexpected error occurred');
+
+      AppLogger.warning('Registration failed - no user returned', tag: _tag);
+      return ApiResponse.error('Registration failed');
+    } on AuthException catch (e) {
+      AppLogger.error('Auth exception during registration', tag: _tag, error: e.message);
+      return ApiResponse.error(e.message);
+    } catch (e, stackTrace) {
+      AppLogger.error('Unexpected error during registration', tag: _tag, error: e, stackTrace: stackTrace);
+      return ApiResponse.error('An unexpected error occurred: ${e.toString()}');
     }
   }
 
   Future<void> logout() async {
+    await _supabaseService.auth.signOut();
     await _storageService.clearAll();
   }
 
   Future<bool> isLoggedIn() async {
-    return await _storageService.hasToken();
+    return _supabaseService.isAuthenticated;
   }
 
-  ApiResponse<UserModel> _handleDioError(DioException e) {
-    String message;
-    
-    if (e.response != null) {
-      final data = e.response?.data;
-      if (data is Map && data['detail'] != null) {
-        message = data['detail'].toString();
-      } else {
-        message = 'Request failed with status ${e.response?.statusCode}';
-      }
-    } else if (e.type == DioExceptionType.connectionTimeout) {
-      message = 'Connection timeout. Please check your internet connection.';
-    } else if (e.type == DioExceptionType.receiveTimeout) {
-      message = 'Server is taking too long to respond.';
-    } else if (e.type == DioExceptionType.connectionError) {
-      message = 'Unable to connect to server. Please check your internet.';
-    } else {
-      message = 'Network error occurred';
-    }
-
-    return ApiResponse.error(message, statusCode: e.response?.statusCode);
-  }
+  User? get currentUser => _supabaseService.currentUser;
 }

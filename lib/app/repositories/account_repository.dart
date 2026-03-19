@@ -10,7 +10,7 @@ class AccountRepository {
 
   Future<ApiResponse<List<AccountModel>>> getAccounts() async {
     try {
-      final response = await _apiService.get(AppConstants.accountsEndpoint);
+      final response = await _apiService.get(ApiEndpoints.accounts);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
@@ -36,7 +36,7 @@ class AccountRepository {
   }) async {
     try {
       final response = await _apiService.post(
-        AppConstants.accountsEndpoint,
+        ApiEndpoints.accounts,
         data: {
           'name': name,
           'account_type': accountType,
@@ -62,7 +62,7 @@ class AccountRepository {
 
   Future<ApiResponse<AccountModel>> getAccountById(int id) async {
     try {
-      final response = await _apiService.get('${AppConstants.accountsEndpoint}/$id');
+      final response = await _apiService.get('${ApiEndpoints.accounts}/$id');
 
       if (response.statusCode == 200) {
         final account = AccountModel.fromJson(response.data);

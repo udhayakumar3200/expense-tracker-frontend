@@ -14,23 +14,23 @@ class StorageService extends GetxService {
   }
 
   Future<void> saveToken(String token) async {
-    await _storage.write(key: AppConstants.jwtKey, value: token);
+    await _storage.write(key: StorageKeys.jwtToken, value: token);
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: AppConstants.jwtKey);
+    return await _storage.read(key: StorageKeys.jwtToken);
   }
 
   Future<void> deleteToken() async {
-    await _storage.delete(key: AppConstants.jwtKey);
+    await _storage.delete(key: StorageKeys.jwtToken);
   }
 
   Future<void> saveUserData(String userData) async {
-    await _storage.write(key: AppConstants.userKey, value: userData);
+    await _storage.write(key: StorageKeys.userData, value: userData);
   }
 
   Future<String?> getUserData() async {
-    return await _storage.read(key: AppConstants.userKey);
+    return await _storage.read(key: StorageKeys.userData);
   }
 
   Future<void> clearAll() async {

@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
-import '../data/constants.dart';
+import '../core/config/env_config.dart';
 import 'storage_service.dart';
 import '../routes/app_routes.dart';
 
@@ -10,7 +10,7 @@ class ApiService extends GetxService {
 
   Future<ApiService> init() async {
     _dio = Dio(BaseOptions(
-      baseUrl: AppConstants.baseUrl,
+      baseUrl: EnvConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       headers: {

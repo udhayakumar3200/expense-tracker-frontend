@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/custom_dropdown.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/error_text.dart';
+import '../../widgets/empty_state.dart';
 
 class AddTransactionScreen extends GetView<TransactionController> {
   const AddTransactionScreen({super.key});
@@ -17,85 +24,39 @@ class AddTransactionScreen extends GetView<TransactionController> {
       ),
       body: Obx(() {
         if (controller.accounts.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'No accounts available',
-                  style: TextStyle(fontSize: 18),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Please create an account first',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => Get.back(),
-                  child: const Text('Go Back'),
-                ),
-              ],
-            ),
+          return EmptyState(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'No accounts available',
+            subtitle: 'Please create an account first',
+            buttonText: 'Go Back',
+            onButtonPressed: () => Get.back(),
           );
         }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: AppSpacing.paddingLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DropdownButtonFormField<String>(
+              TransactionTypeDropdown(
                 value: controller.selectedTransactionType.value,
-                decoration: const InputDecoration(
-                  labelText: 'Transaction Type',
-                  prefixIcon: Icon(Icons.swap_vert),
-                  border: OutlineInputBorder(),
-                ),
-                items: controller.transactionTypes
-                    .map((type) => DropdownMenuItem(
-                          value: type['value'],
-                          child: Text(type['label']!),
-                        ))
-                    .toList(),
                 onChanged: (value) {
                   if (value != null) {
                     controller.selectedTransactionType.value = value;
                   }
                 },
               ),
-              const SizedBox(height: 20),
-              TextField(
+              AppSpacing.verticalMd,
+              CustomAmountField(
                 controller: controller.amountController,
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  hintText: '0.00',
-                  prefixIcon: Icon(Icons.attach_money),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                ],
-                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<int>(
+              AppSpacing.verticalMd,
+              CustomDropdown<int>(
                 value: controller.selectedFromAccountId.value,
-                decoration: InputDecoration(
-                  labelText: controller.selectedTransactionType.value == 'income'
-                      ? 'To Account'
-                      : 'From Account',
-                  prefixIcon: const Icon(Icons.account_balance),
-                  border: const OutlineInputBorder(),
-                ),
+                label: controller.selectedTransactionType.value == 'income'
+                    ? 'To Account'
+                    : 'From Account',
+                prefixIcon: Icons.account_balance,
                 items: controller.accounts
                     .map((account) => DropdownMenuItem(
                           value: account.id,
@@ -107,20 +68,16 @@ class AddTransactionScreen extends GetView<TransactionController> {
                 },
               ),
               if (controller.selectedTransactionType.value == 'transfer') ...[
-                const SizedBox(height: 20),
-                DropdownButtonFormField<int>(
+                AppSpacing.verticalMd,
+                CustomDropdown<int>(
                   value: controller.selectedToAccountId.value,
-                  decoration: const InputDecoration(
-                    labelText: 'To Account',
-                    prefixIcon: Icon(Icons.account_balance),
-                    border: OutlineInputBorder(),
-                  ),
+                  label: 'To Account',
+                  prefixIcon: Icons.account_balance,
                   items: controller.accounts
                       .where((a) => a.id != controller.selectedFromAccountId.value)
                       .map((account) => DropdownMenuItem(
                             value: account.id,
-                            child:
-                                Text('${account.name} (${account.displayType})'),
+                            child: Text('${account.name} (${account.displayType})'),
                           ))
                       .toList(),
                   onChanged: (value) {
@@ -128,81 +85,77 @@ class AddTransactionScreen extends GetView<TransactionController> {
                   },
                 ),
               ],
-              const SizedBox(height: 20),
-              TextField(
+              AppSpacing.verticalMd,
+              CustomTextField(
                 controller: controller.categoryController,
-                decoration: const InputDecoration(
-                  labelText: 'Category (Optional)',
-                  hintText: 'e.g., Food, Transport, Salary',
-                  prefixIcon: Icon(Icons.category_outlined),
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Category (Optional)',
+                hint: 'e.g., Food, Transport, Salary',
+                prefixIcon: Icons.category_outlined,
                 textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 20),
-              TextField(
+              AppSpacing.verticalMd,
+              CustomTextField(
                 controller: controller.descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (Optional)',
-                  hintText: 'Add a note',
-                  prefixIcon: Icon(Icons.notes),
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Description (Optional)',
+                hint: 'Add a note',
+                prefixIcon: Icons.notes,
                 textCapitalization: TextCapitalization.sentences,
                 maxLines: 2,
               ),
-              const SizedBox(height: 20),
-              InkWell(
+              AppSpacing.verticalMd,
+              _DatePickerField(
+                selectedDate: controller.selectedDate.value,
+                dateFormat: dateFormat,
                 onTap: () => controller.selectDate(context),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Date',
-                    prefixIcon: Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(),
-                  ),
-                  child: Text(
-                    dateFormat.format(controller.selectedDate.value),
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ),
               ),
-              const SizedBox(height: 12),
-              if (controller.errorMessage.value.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    controller.errorMessage.value,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: controller.isSubmitting.value
-                    ? null
-                    : controller.createTransaction,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: controller.isSubmitting.value
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text(
-                        'Create Transaction',
-                        style: TextStyle(fontSize: 16),
-                      ),
+              AppSpacing.verticalSm,
+              ErrorText(
+                message: controller.errorMessage.value,
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              ),
+              AppSpacing.verticalLg,
+              CustomButton(
+                text: 'Create Transaction',
+                onPressed: controller.createTransaction,
+                isLoading: controller.isSubmitting.value,
               ),
             ],
           ),
         );
       }),
+    );
+  }
+}
+
+class _DatePickerField extends StatelessWidget {
+  final DateTime selectedDate;
+  final DateFormat dateFormat;
+  final VoidCallback onTap;
+
+  const _DatePickerField({
+    required this.selectedDate,
+    required this.dateFormat,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppSpacing.borderRadiusSm,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Date',
+          prefixIcon: Icon(
+            Icons.calendar_today,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        child: Text(
+          dateFormat.format(selectedDate),
+          style: AppTextStyles.bodyMedium,
+        ),
+      ),
     );
   }
 }

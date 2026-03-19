@@ -1,11 +1,15 @@
-class AppConstants {
-  static const String baseUrl = 'http://YOUR_BACKEND_URL';
+class ApiEndpoints {
+  ApiEndpoints._();
   
-  static const String loginEndpoint = '/auth/login';
-  static const String registerEndpoint = '/auth/register';
-  static const String accountsEndpoint = '/accounts';
-  static const String transactionsEndpoint = '/transactions';
+  static const String login = '/auth/login';
+  static const String register = '/auth/register';
+  static const String accounts = '/accounts';
+  static const String transactions = '/transactions';
+}
+
+class StorageKeys {
+  StorageKeys._();
   
-  static const String jwtKey = 'jwt_token';
-  static const String userKey = 'user_data';
+  static const String jwtToken = 'jwt_token';
+  static const String userData = 'user_data';
 }

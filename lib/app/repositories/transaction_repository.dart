@@ -10,7 +10,7 @@ class TransactionRepository {
 
   Future<ApiResponse<List<TransactionModel>>> getTransactions() async {
     try {
-      final response = await _apiService.get(AppConstants.transactionsEndpoint);
+      final response = await _apiService.get(ApiEndpoints.transactions);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
@@ -58,7 +58,7 @@ class TransactionRepository {
       }
 
       final response = await _apiService.post(
-        AppConstants.transactionsEndpoint,
+        ApiEndpoints.transactions,
         data: data,
       );
 

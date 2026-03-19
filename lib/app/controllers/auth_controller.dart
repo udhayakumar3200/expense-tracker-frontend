@@ -35,71 +35,57 @@ class AuthController extends GetxController {
   }
 
   Future<void> login() async {
-    // TODO: Uncomment validation for production
-    // if (!_validateFields()) return;
+    if (!_validateFields()) return;
 
-    // isLoading.value = true;
-    // errorMessage.value = '';
+    isLoading.value = true;
+    errorMessage.value = '';
 
-    // final response = await _authRepository.login(
-    //   emailController.text.trim(),
-    //   passwordController.text,
-    // );
+    final response = await _authRepository.login(
+      emailController.text.trim(),
+      passwordController.text,
+    );
 
-    // isLoading.value = false;
+    isLoading.value = false;
 
-    // if (response.success) {
-    //   clearFields();
-    //   Get.offAllNamed(AppRoutes.dashboard);
-    // } else {
-    //   errorMessage.value = response.message ?? 'Login failed';
-    // }
-
-    // Skip validation for UI preview
-    Get.offAllNamed(AppRoutes.dashboard);
+    if (response.success) {
+      clearFields();
+      Get.offAllNamed(AppRoutes.dashboard);
+    } else {
+      errorMessage.value = response.message ?? 'Login failed';
+    }
   }
 
   Future<void> register() async {
-    // TODO: Uncomment validation for production
-    // if (!_validateFields()) return;
+    if (!_validateFields()) return;
 
-    // isLoading.value = true;
-    // errorMessage.value = '';
+    isLoading.value = true;
+    errorMessage.value = '';
 
-    // final response = await _authRepository.register(
-    //   emailController.text.trim(),
-    //   passwordController.text,
-    //   name: nameController.text.trim().isEmpty
-    //       ? null
-    //       : nameController.text.trim(),
-    // );
-
-    // isLoading.value = false;
-
-    // if (response.success) {
-    //   Get.snackbar(
-    //     'Success',
-    //     'Registration successful! Please login.',
-    //     snackPosition: SnackPosition.BOTTOM,
-    //     backgroundColor: Colors.green,
-    //     colorText: Colors.white,
-    //   );
-    //   isLoginMode.value = true;
-    //   passwordController.clear();
-    //   nameController.clear();
-    // } else {
-    //   errorMessage.value = response.message ?? 'Registration failed';
-    // }
-
-    // Skip validation for UI preview
-    Get.snackbar(
-      'Success',
-      'Registration successful! Please login.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
+    final response = await _authRepository.register(
+      emailController.text.trim(),
+      passwordController.text,
+      name: nameController.text.trim().isEmpty
+          ? null
+          : nameController.text.trim(),
     );
-    isLoginMode.value = true;
+
+    isLoading.value = false;
+
+    if (response.success) {
+      Get.snackbar(
+        'Success',
+        'Registration successful! Please check your email to verify your account.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      isLoginMode.value = true;
+      passwordController.clear();
+      nameController.clear();
+    } else {
+      errorMessage.value = response.message ?? 'Registration failed';
+    }
   }
 
   Future<void> logout() async {
@@ -111,7 +97,6 @@ class AuthController extends GetxController {
     return await _authRepository.isLoggedIn();
   }
 
-  // ignore: unused_element
   bool _validateFields() {
     if (emailController.text.trim().isEmpty) {
       errorMessage.value = 'Email is required';

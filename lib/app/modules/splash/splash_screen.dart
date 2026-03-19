@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../routes/app_routes.dart';
-import '../../services/storage_service.dart';
+import '../../services/supabase_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,10 +23,9 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAuth() async {
     await Future.delayed(const Duration(milliseconds: 500));
     
-    final storageService = Get.find<StorageService>();
-    final hasToken = await storageService.hasToken();
+    final supabaseService = Get.find<SupabaseService>();
 
-    if (hasToken) {
+    if (supabaseService.isAuthenticated) {
       Get.offAllNamed(AppRoutes.dashboard);
     } else {
       Get.offAllNamed(AppRoutes.login);
@@ -33,24 +35,25 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.account_balance_wallet,
-              size: 80,
-              color: Theme.of(context).primaryColor,
+              size: AppSpacing.iconXxl + 16,
+              color: AppColors.primary,
             ),
-            const SizedBox(height: 24),
+            AppSpacing.verticalLg,
             Text(
               'Expense Tracker',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: AppTextStyles.h2,
             ),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(),
+            AppSpacing.verticalXl,
+            const CircularProgressIndicator(
+              color: AppColors.primary,
+            ),
           ],
         ),
       ),

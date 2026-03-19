@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/error_text.dart';
 
 class LoginScreen extends GetView<AuthController> {
   const LoginScreen({super.key});
@@ -11,74 +17,55 @@ class LoginScreen extends GetView<AuthController> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: AppSpacing.paddingLg,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Icon(
                   Icons.account_balance_wallet,
-                  size: 64,
-                  color: Theme.of(context).primaryColor,
+                  size: AppSpacing.iconXxl,
+                  color: AppColors.primary,
                 ),
-                const SizedBox(height: 16),
+                AppSpacing.verticalMd,
                 Text(
                   'Expense Tracker',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: AppTextStyles.h2,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                AppSpacing.verticalSm,
                 Obx(() => Text(
                       controller.isLoginMode.value
                           ? 'Welcome back!'
                           : 'Create your account',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                       textAlign: TextAlign.center,
                     )),
-                const SizedBox(height: 40),
+                AppSpacing.verticalXl,
                 Obx(() {
                   if (!controller.isLoginMode.value) {
                     return Column(
                       children: [
-                        TextField(
+                        CustomTextField(
                           controller: controller.nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Name (Optional)',
-                            prefixIcon: Icon(Icons.person_outline),
-                            border: OutlineInputBorder(),
-                          ),
-                          textInputAction: TextInputAction.next,
+                          label: 'Name (Optional)',
+                          prefixIcon: Icons.person_outline,
+                          textCapitalization: TextCapitalization.words,
                         ),
-                        const SizedBox(height: 16),
+                        AppSpacing.verticalMd,
                       ],
                     );
                   }
                   return const SizedBox.shrink();
                 }),
-                TextField(
+                CustomEmailField(
                   controller: controller.emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
                 ),
-                const SizedBox(height: 16),
-                TextField(
+                AppSpacing.verticalMd,
+                CustomPasswordField(
                   controller: controller.passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  textInputAction: TextInputAction.done,
                   onSubmitted: (_) {
                     if (controller.isLoginMode.value) {
                       controller.login();
@@ -87,60 +74,32 @@ class LoginScreen extends GetView<AuthController> {
                     }
                   },
                 ),
-                const SizedBox(height: 8),
-                Obx(() {
-                  if (controller.errorMessage.value.isNotEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        controller.errorMessage.value,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }),
-                const SizedBox(height: 24),
-                Obx(() => ElevatedButton(
-                      onPressed: controller.isLoading.value
-                          ? null
-                          : () {
-                              if (controller.isLoginMode.value) {
-                                controller.login();
-                              } else {
-                                controller.register();
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: controller.isLoading.value
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(
-                              controller.isLoginMode.value
-                                  ? 'Login'
-                                  : 'Register',
-                              style: const TextStyle(fontSize: 16),
-                            ),
+                AppSpacing.verticalSm,
+                Obx(() => ErrorText(
+                      message: controller.errorMessage.value,
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     )),
-                const SizedBox(height: 16),
-                Obx(() => TextButton(
+                AppSpacing.verticalMd,
+                Obx(() => CustomButton(
+                      text: controller.isLoginMode.value ? 'Login' : 'Register',
+                      onPressed: () {
+                        if (controller.isLoginMode.value) {
+                          controller.login();
+                        } else {
+                          controller.register();
+                        }
+                      },
+                      isLoading: controller.isLoading.value,
+                    )),
+                AppSpacing.verticalMd,
+                Obx(() => CustomButton(
+                      text: controller.isLoginMode.value
+                          ? "Don't have an account? Register"
+                          : 'Already have an account? Login',
                       onPressed: controller.isLoading.value
                           ? null
                           : controller.toggleMode,
-                      child: Text(
-                        controller.isLoginMode.value
-                            ? "Don't have an account? Register"
-                            : 'Already have an account? Login',
-                      ),
+                      variant: ButtonVariant.text,
                     )),
               ],
             ),
