@@ -1,10 +1,19 @@
+class ApiConfig {
+  ApiConfig._();
+}
+
 class ApiEndpoints {
   ApiEndpoints._();
-  
-  static const String login = '/auth/login';
-  static const String register = '/auth/register';
-  static const String accounts = '/accounts';
-  static const String transactions = '/transactions';
+
+  // Public
+  static const String health = '/health';
+
+  // Protected /api/*
+  static const String createAccount = '/api/accounts/create_account';
+  static const String getAccounts = '/api/accounts/get_accounts';
+  static const String createCategory = '/api/categories/create_category';
+  static const String getCategories = '/api/categories/get_categories';
+  static const String createTransaction = '/api/transactions/create_transaction';
 }
 
 class StorageKeys {

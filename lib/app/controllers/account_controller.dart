@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-// ignore: unused_import
 import '../repositories/account_repository.dart';
-// ignore: unused_import
 import 'dashboard_controller.dart';
 
 class AccountController extends GetxController {
-  // ignore: unused_field
   final AccountRepository _accountRepository = AccountRepository();
 
   final nameController = TextEditingController();
@@ -38,54 +35,41 @@ class AccountController extends GetxController {
   }
 
   Future<void> createAccount() async {
-    // TODO: Uncomment validation for production
-    // if (!_validateFields()) return;
+    if (!_validateFields()) return;
 
-    // isLoading.value = true;
-    // errorMessage.value = '';
+    isLoading.value = true;
+    errorMessage.value = '';
 
-    // final balance = double.tryParse(balanceController.text.trim()) ?? 0;
+    final balance = double.tryParse(balanceController.text.trim()) ?? 0;
 
-    // final response = await _accountRepository.createAccount(
-    //   name: nameController.text.trim(),
-    //   accountType: selectedAccountType.value,
-    //   balance: balance,
-    // );
-
-    // isLoading.value = false;
-
-    // if (response.success) {
-    //   Get.snackbar(
-    //     'Success',
-    //     'Account created successfully!',
-    //     snackPosition: SnackPosition.BOTTOM,
-    //     backgroundColor: Colors.green,
-    //     colorText: Colors.white,
-    //   );
-
-    //   if (Get.isRegistered<DashboardController>()) {
-    //     Get.find<DashboardController>().refreshData();
-    //   }
-
-    //   clearFields();
-    //   Get.back();
-    // } else {
-    //   errorMessage.value = response.message ?? 'Failed to create account';
-    // }
-
-    // Skip validation for UI preview
-    Get.snackbar(
-      'Success',
-      'Account created successfully!',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
+    final response = await _accountRepository.createAccount(
+      name: nameController.text.trim(),
+      accountType: selectedAccountType.value,
+      balance: balance,
     );
-    clearFields();
-    Get.back();
+
+    isLoading.value = false;
+
+    if (response.success) {
+      Get.snackbar(
+        'Success',
+        'Account created successfully!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+
+      if (Get.isRegistered<DashboardController>()) {
+        Get.find<DashboardController>().refreshData();
+      }
+
+      clearFields();
+      Get.back();
+    } else {
+      errorMessage.value = response.message ?? 'Failed to create account';
+    }
   }
 
-  // ignore: unused_element
   bool _validateFields() {
     if (nameController.text.trim().isEmpty) {
       errorMessage.value = 'Account name is required';

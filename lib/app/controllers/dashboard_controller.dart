@@ -13,21 +13,7 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // TODO: Uncomment for production
-    // fetchAccounts();
-    
-    // Mock data for UI preview
-    _loadMockData();
-  }
-
-  void _loadMockData() {
-    accounts.value = [
-      AccountModel(id: 1, name: 'Main Savings', accountType: 'bank', balance: 5000.0, userId: 1),
-      AccountModel(id: 2, name: 'Cash Wallet', accountType: 'cash', balance: 500.0, userId: 1),
-      AccountModel(id: 3, name: 'GPay', accountType: 'upi', balance: 1200.0, userId: 1),
-      AccountModel(id: 4, name: 'Credit Card', accountType: 'credit_card', balance: -250.0, userId: 1),
-    ];
-    _calculateTotalBalance();
+    fetchAccounts();
   }
 
   Future<void> fetchAccounts() async {

@@ -27,7 +27,7 @@ class CustomDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: enabled ? onChanged : null,
       decoration: InputDecoration(
@@ -119,10 +119,10 @@ class TransactionTypeDropdown extends StatelessWidget {
 }
 
 class AccountDropdown extends StatelessWidget {
-  final int? value;
+  final String? value;
   final String? label;
   final List<Map<String, dynamic>> accounts;
-  final ValueChanged<int?>? onChanged;
+  final ValueChanged<String?>? onChanged;
   final String? errorText;
 
   const AccountDropdown({
@@ -136,15 +136,47 @@ class AccountDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomDropdown<int>(
+    return CustomDropdown<String>(
       value: value,
       label: label,
       prefixIcon: Icons.account_balance,
       errorText: errorText,
       items: accounts
-          .map((account) => DropdownMenuItem<int>(
-                value: account['id'] as int,
+          .map((account) => DropdownMenuItem<String>(
+                value: account['id'].toString(),
                 child: Text('${account['name']} (${account['type']})'),
+              ))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+}
+
+class CategoryDropdown extends StatelessWidget {
+  final String? value;
+  final List<Map<String, dynamic>> categories;
+  final ValueChanged<String?>? onChanged;
+  final String? errorText;
+
+  const CategoryDropdown({
+    super.key,
+    this.value,
+    required this.categories,
+    this.onChanged,
+    this.errorText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomDropdown<String>(
+      value: value,
+      label: 'Category',
+      prefixIcon: Icons.category_outlined,
+      errorText: errorText,
+      items: categories
+          .map((category) => DropdownMenuItem<String>(
+                value: category['id'].toString(),
+                child: Text(category['name'].toString()),
               ))
           .toList(),
       onChanged: onChanged,

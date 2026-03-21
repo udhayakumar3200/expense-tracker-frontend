@@ -43,6 +43,9 @@ class AddTransactionScreen extends GetView<TransactionController> {
                 onChanged: (value) {
                   if (value != null) {
                     controller.selectedTransactionType.value = value;
+                    controller.selectedFromAccountId.value = null;
+                    controller.selectedToAccountId.value = null;
+                    controller.selectedCategoryId.value = null;
                   }
                 },
               ),
@@ -51,30 +54,33 @@ class AddTransactionScreen extends GetView<TransactionController> {
                 controller: controller.amountController,
               ),
               AppSpacing.verticalMd,
-              CustomDropdown<int>(
-                value: controller.selectedFromAccountId.value,
-                label: controller.selectedTransactionType.value == 'income'
-                    ? 'To Account'
-                    : 'From Account',
-                prefixIcon: Icons.account_balance,
-                items: controller.accounts
-                    .map((account) => DropdownMenuItem(
-                          value: account.id,
-                          child: Text('${account.name} (${account.displayType})'),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  controller.selectedFromAccountId.value = value;
-                },
-              ),
-              if (controller.selectedTransactionType.value == 'transfer') ...[
+              if (controller.selectedTransactionType.value == 'expense' ||
+                  controller.selectedTransactionType.value == 'transfer')
+                CustomDropdown<String>(
+                  value: controller.selectedFromAccountId.value,
+                  label: 'From Account',
+                  prefixIcon: Icons.account_balance,
+                  items: controller.accounts
+                      .map((account) => DropdownMenuItem(
+                            value: account.id,
+                            child: Text('${account.name} (${account.displayType})'),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    controller.selectedFromAccountId.value = value;
+                  },
+                ),
+              if (controller.selectedTransactionType.value == 'income' ||
+                  controller.selectedTransactionType.value == 'transfer') ...[
                 AppSpacing.verticalMd,
-                CustomDropdown<int>(
+                CustomDropdown<String>(
                   value: controller.selectedToAccountId.value,
                   label: 'To Account',
                   prefixIcon: Icons.account_balance,
                   items: controller.accounts
-                      .where((a) => a.id != controller.selectedFromAccountId.value)
+                      .where((a) =>
+                          controller.selectedTransactionType.value != 'transfer' ||
+                          a.id != controller.selectedFromAccountId.value)
                       .map((account) => DropdownMenuItem(
                             value: account.id,
                             child: Text('${account.name} (${account.displayType})'),
@@ -85,14 +91,16 @@ class AddTransactionScreen extends GetView<TransactionController> {
                   },
                 ),
               ],
-              AppSpacing.verticalMd,
-              CustomTextField(
-                controller: controller.categoryController,
-                label: 'Category (Optional)',
-                hint: 'e.g., Food, Transport, Salary',
-                prefixIcon: Icons.category_outlined,
-                textCapitalization: TextCapitalization.words,
-              ),
+              if (controller.selectedTransactionType.value != 'transfer') ...[
+                AppSpacing.verticalMd,
+                CategoryDropdown(
+                  value: controller.selectedCategoryId.value,
+                  categories: controller.categoriesForSelectedType
+                      .map((c) => {'id': c.id, 'name': c.name})
+                      .toList(),
+                  onChanged: (value) => controller.selectedCategoryId.value = value,
+                ),
+              ],
               AppSpacing.verticalMd,
               CustomTextField(
                 controller: controller.descriptionController,

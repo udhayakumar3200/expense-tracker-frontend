@@ -154,16 +154,31 @@ The app follows **Clean Architecture** principles:
 
 ## API Endpoints
 
-The app expects a backend API with these endpoints:
+The app integrates with these Expense Tracker REST endpoints:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/login` | User login |
-| POST | `/auth/register` | User registration |
-| GET | `/accounts` | List all accounts |
-| POST | `/accounts` | Create account |
-| GET | `/transactions` | List all transactions |
-| POST | `/transactions` | Create transaction |
+| Method | Endpoint | Auth |
+|--------|----------|------|
+| GET | `/health` | No |
+| POST | `/api/accounts/create_account` | Yes |
+| GET | `/api/accounts/get_accounts` | Yes |
+| POST | `/api/categories/create_category` | Yes |
+| GET | `/api/categories/get_categories` | Yes |
+| POST | `/api/transactions/create_transaction` | Yes |
+
+All `/api/*` requests include:
+`Authorization: Bearer <session.accessToken>` from the active Supabase session.
+
+## Post Sign-in Example
+
+After successful Supabase login, you can call repositories directly:
+
+```dart
+final authResponse = await authRepository.login(email, password);
+if (authResponse.success) {
+  // ApiService interceptor now injects Bearer token for /api/*.
+  final accountsResponse = await accountRepository.getAccounts();
+}
+```
 
 ## Screens
 

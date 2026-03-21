@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/account_model.dart';
+import '../models/category_model.dart';
 import '../models/transaction_model.dart';
 import '../repositories/account_repository.dart';
+import '../repositories/category_repository.dart';
 import '../repositories/transaction_repository.dart';
-// ignore: unused_import
 import 'dashboard_controller.dart';
 
 class TransactionController extends GetxController {
   final TransactionRepository _transactionRepository = TransactionRepository();
   final AccountRepository _accountRepository = AccountRepository();
+  final CategoryRepository _categoryRepository = CategoryRepository();
 
   final amountController = TextEditingController();
-  final categoryController = TextEditingController();
   final descriptionController = TextEditingController();
 
   final RxList<TransactionModel> transactions = <TransactionModel>[].obs;
   final RxList<AccountModel> accounts = <AccountModel>[].obs;
+  final RxList<CategoryModel> categories = <CategoryModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isSubmitting = false.obs;
   final RxString errorMessage = ''.obs;
 
   final RxString selectedTransactionType = 'expense'.obs;
-  final Rxn<int> selectedFromAccountId = Rxn<int>();
-  final Rxn<int> selectedToAccountId = Rxn<int>();
+  final RxnString selectedFromAccountId = RxnString();
+  final RxnString selectedToAccountId = RxnString();
+  final RxnString selectedCategoryId = RxnString();
   final Rx<DateTime> selectedDate = DateTime.now().obs;
 
   final List<Map<String, String>> transactionTypes = [
@@ -35,33 +38,14 @@ class TransactionController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // TODO: Uncomment for production
-    // fetchAccounts();
-    // fetchTransactions();
-
-    // Mock data for UI preview
-    _loadMockData();
-  }
-
-  void _loadMockData() {
-    accounts.value = [
-      AccountModel(id: 1, name: 'Main Savings', accountType: 'bank', balance: 5000.0, userId: 1),
-      AccountModel(id: 2, name: 'Cash Wallet', accountType: 'cash', balance: 500.0, userId: 1),
-      AccountModel(id: 3, name: 'GPay', accountType: 'upi', balance: 1200.0, userId: 1),
-    ];
-    selectedFromAccountId.value = accounts.first.id;
-
-    transactions.value = [
-      TransactionModel(id: 1, transactionType: 'expense', amount: 50.0, fromAccountId: 1, category: 'Food', description: 'Lunch', transactionDate: DateTime.now(), userId: 1),
-      TransactionModel(id: 2, transactionType: 'income', amount: 3000.0, fromAccountId: 1, category: 'Salary', description: 'Monthly salary', transactionDate: DateTime.now().subtract(const Duration(days: 1)), userId: 1),
-      TransactionModel(id: 3, transactionType: 'transfer', amount: 200.0, fromAccountId: 1, toAccountId: 2, description: 'Cash withdrawal', transactionDate: DateTime.now().subtract(const Duration(days: 2)), userId: 1),
-    ];
+    fetchAccounts();
+    fetchCategories();
+    fetchTransactions();
   }
 
   @override
   void onClose() {
     amountController.dispose();
-    categoryController.dispose();
     descriptionController.dispose();
     super.onClose();
   }
@@ -73,6 +57,13 @@ class TransactionController extends GetxController {
       if (accounts.isNotEmpty && selectedFromAccountId.value == null) {
         selectedFromAccountId.value = accounts.first.id;
       }
+    }
+  }
+
+  Future<void> fetchCategories() async {
+    final response = await _categoryRepository.getCategories();
+    if (response.success && response.data != null) {
+      categories.value = response.data!;
     }
   }
 
@@ -93,71 +84,68 @@ class TransactionController extends GetxController {
 
   void clearFields() {
     amountController.clear();
-    categoryController.clear();
     descriptionController.clear();
     selectedTransactionType.value = 'expense';
     selectedFromAccountId.value = accounts.isNotEmpty ? accounts.first.id : null;
     selectedToAccountId.value = null;
+    selectedCategoryId.value = null;
     selectedDate.value = DateTime.now();
     errorMessage.value = '';
   }
 
   Future<void> createTransaction() async {
-    // TODO: Uncomment validation for production
-    // if (!_validateFields()) return;
+    if (!_validateFields()) return;
 
-    // isSubmitting.value = true;
-    // errorMessage.value = '';
+    isSubmitting.value = true;
+    errorMessage.value = '';
 
-    // final amount = double.tryParse(amountController.text.trim()) ?? 0;
+    final amount = double.tryParse(amountController.text.trim()) ?? 0;
 
-    // final response = await _transactionRepository.createTransaction(
-    //   transactionType: selectedTransactionType.value,
-    //   amount: amount,
-    //   fromAccountId: selectedFromAccountId.value!,
-    //   toAccountId: selectedTransactionType.value == 'transfer'
-    //       ? selectedToAccountId.value
-    //       : null,
-    //   category: categoryController.text.trim().isEmpty
-    //       ? null
-    //       : categoryController.text.trim(),
-    //   description: descriptionController.text.trim().isEmpty
-    //       ? null
-    //       : descriptionController.text.trim(),
-    //   transactionDate: selectedDate.value,
-    // );
+    final type = selectedTransactionType.value;
+    String? fromAccountId;
+    String? toAccountId;
 
-    // isSubmitting.value = false;
+    if (type == 'expense') {
+      fromAccountId = selectedFromAccountId.value;
+    } else if (type == 'income') {
+      toAccountId = selectedToAccountId.value;
+    } else {
+      fromAccountId = selectedFromAccountId.value;
+      toAccountId = selectedToAccountId.value;
+    }
 
-    // if (response.success) {
-    //   Get.snackbar(
-    //     'Success',
-    //     'Transaction created successfully!',
-    //     snackPosition: SnackPosition.BOTTOM,
-    //     backgroundColor: Colors.green,
-    //     colorText: Colors.white,
-    //   );
-
-    //   if (Get.isRegistered<DashboardController>()) {
-    //     Get.find<DashboardController>().refreshData();
-    //   }
-
-    //   clearFields();
-    //   Get.back();
-    // } else {
-    //   errorMessage.value = response.message ?? 'Failed to create transaction';
-    // }
-
-    // Skip validation for UI preview
-    Get.snackbar(
-      'Success',
-      'Transaction created successfully!',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
+    final response = await _transactionRepository.createTransaction(
+      transactionType: type,
+      amount: amount,
+      fromAccountId: fromAccountId,
+      toAccountId: toAccountId,
+      categoryId: selectedCategoryId.value,
+      description: descriptionController.text.trim().isEmpty
+          ? null
+          : descriptionController.text.trim(),
+      transactionDate: selectedDate.value,
     );
-    clearFields();
-    Get.back();
+
+    isSubmitting.value = false;
+
+    if (response.success) {
+      Get.snackbar(
+        'Success',
+        'Transaction created successfully!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+
+      if (Get.isRegistered<DashboardController>()) {
+        Get.find<DashboardController>().refreshData();
+      }
+
+      clearFields();
+      Get.back();
+    } else {
+      errorMessage.value = response.message ?? 'Failed to create transaction';
+    }
   }
 
   Future<void> refreshTransactions() async {
@@ -176,7 +164,6 @@ class TransactionController extends GetxController {
     }
   }
 
-  // ignore: unused_element
   bool _validateFields() {
     if (amountController.text.trim().isEmpty) {
       errorMessage.value = 'Amount is required';
@@ -189,14 +176,20 @@ class TransactionController extends GetxController {
       return false;
     }
 
-    if (selectedFromAccountId.value == null) {
-      errorMessage.value = 'Please select an account';
+    final txType = selectedTransactionType.value;
+    if (txType == 'expense' && selectedFromAccountId.value == null) {
+      errorMessage.value = 'Expense requires a source account';
       return false;
     }
 
-    if (selectedTransactionType.value == 'transfer') {
-      if (selectedToAccountId.value == null) {
-        errorMessage.value = 'Please select a destination account for transfer';
+    if (txType == 'income' && selectedToAccountId.value == null) {
+      errorMessage.value = 'Income requires a destination account';
+      return false;
+    }
+
+    if (txType == 'transfer') {
+      if (selectedFromAccountId.value == null || selectedToAccountId.value == null) {
+        errorMessage.value = 'Transfer requires both source and destination accounts';
         return false;
       }
       if (selectedFromAccountId.value == selectedToAccountId.value) {
@@ -208,8 +201,15 @@ class TransactionController extends GetxController {
     return true;
   }
 
-  String getAccountName(int accountId) {
+  String getAccountName(String accountId) {
     final account = accounts.firstWhereOrNull((a) => a.id == accountId);
     return account?.name ?? 'Unknown';
+  }
+
+  List<CategoryModel> get categoriesForSelectedType {
+    if (selectedTransactionType.value == 'transfer') return const <CategoryModel>[];
+    return categories
+        .where((c) => c.type.apiValue == selectedTransactionType.value)
+        .toList();
   }
 }

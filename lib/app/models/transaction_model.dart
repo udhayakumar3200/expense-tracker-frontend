@@ -1,39 +1,67 @@
+enum TransactionType { expense, income, transfer }
+
+extension TransactionTypeX on TransactionType {
+  String get apiValue {
+    switch (this) {
+      case TransactionType.expense:
+        return 'expense';
+      case TransactionType.income:
+        return 'income';
+      case TransactionType.transfer:
+        return 'transfer';
+    }
+  }
+
+  static TransactionType fromApi(String value) {
+    switch (value) {
+      case 'expense':
+        return TransactionType.expense;
+      case 'income':
+        return TransactionType.income;
+      case 'transfer':
+        return TransactionType.transfer;
+      default:
+        return TransactionType.expense;
+    }
+  }
+}
+
 class TransactionModel {
-  final int id;
-  final String transactionType;
+  final String id;
+  final String userId;
   final double amount;
-  final int fromAccountId;
-  final int? toAccountId;
-  final String? category;
-  final String? description;
+  final TransactionType type;
   final DateTime transactionDate;
-  final int userId;
+  final String? fromAccountId;
+  final String? toAccountId;
+  final String? categoryId;
+  final String? description;
   final DateTime? createdAt;
 
   TransactionModel({
     required this.id,
-    required this.transactionType,
-    required this.amount,
-    required this.fromAccountId,
-    this.toAccountId,
-    this.category,
-    this.description,
-    required this.transactionDate,
     required this.userId,
+    required this.amount,
+    required this.type,
+    required this.transactionDate,
+    this.fromAccountId,
+    this.toAccountId,
+    this.categoryId,
+    this.description,
     this.createdAt,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
-      id: json['id'] as int,
-      transactionType: json['transaction_type'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      fromAccountId: json['from_account_id'] as int,
-      toAccountId: json['to_account_id'] as int?,
-      category: json['category'] as String?,
+      id: (json['id'] ?? '').toString(),
+      userId: (json['user_id'] ?? '').toString(),
+      amount: _toDouble(json['amount']),
+      type: TransactionTypeX.fromApi((json['type'] ?? '').toString()),
+      transactionDate: DateTime.parse((json['transaction_date'] ?? '').toString()),
+      fromAccountId: json['from_account_id']?.toString(),
+      toAccountId: json['to_account_id']?.toString(),
+      categoryId: json['category_id']?.toString(),
       description: json['description'] as String?,
-      transactionDate: DateTime.parse(json['transaction_date'] as String),
-      userId: json['user_id'] as int,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -43,28 +71,68 @@ class TransactionModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'transaction_type': transactionType,
+      'user_id': userId,
       'amount': amount,
+      'type': type.apiValue,
+      'transaction_date': transactionDate.toIso8601String(),
       'from_account_id': fromAccountId,
       'to_account_id': toAccountId,
-      'category': category,
+      'category_id': categoryId,
       'description': description,
-      'transaction_date': transactionDate.toIso8601String(),
-      'user_id': userId,
       'created_at': createdAt?.toIso8601String(),
     };
   }
 
+  // Compatibility getters for existing UI code.
+  String get transactionType => type.apiValue;
+  String? get category => null;
+
   String get displayType {
-    switch (transactionType) {
-      case 'expense':
+    switch (type) {
+      case TransactionType.expense:
         return 'Expense';
-      case 'income':
+      case TransactionType.income:
         return 'Income';
-      case 'transfer':
+      case TransactionType.transfer:
         return 'Transfer';
-      default:
-        return transactionType;
     }
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0.0;
+  }
+}
+
+class TransactionCreateRequest {
+  final double amount;
+  final TransactionType type;
+  final DateTime transactionDate;
+  final String? fromAccountId;
+  final String? toAccountId;
+  final String? categoryId;
+  final String? description;
+
+  const TransactionCreateRequest({
+    required this.amount,
+    required this.type,
+    required this.transactionDate,
+    this.fromAccountId,
+    this.toAccountId,
+    this.categoryId,
+    this.description,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'amount': amount,
+      'type': type.apiValue,
+      'transaction_date': transactionDate.toIso8601String(),
+      if (fromAccountId != null) 'from_account_id': fromAccountId,
+      if (toAccountId != null) 'to_account_id': toAccountId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (description != null && description!.isNotEmpty) 'description': description,
+    };
   }
 }

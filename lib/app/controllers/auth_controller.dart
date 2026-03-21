@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../repositories/auth_repository.dart';
+import '../repositories/account_repository.dart';
 import '../routes/app_routes.dart';
 
 class AuthController extends GetxController {
@@ -13,6 +14,7 @@ class AuthController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isLoginMode = true.obs;
   final RxString errorMessage = ''.obs;
+  final AccountRepository _accountRepository = AccountRepository();
 
   @override
   void onClose() {
@@ -48,6 +50,9 @@ class AuthController extends GetxController {
     isLoading.value = false;
 
     if (response.success) {
+      // Example usage after Supabase sign-in:
+      // the API client will send Authorization: Bearer <session.accessToken>.
+      await _accountRepository.getAccounts();
       clearFields();
       Get.offAllNamed(AppRoutes.dashboard);
     } else {
