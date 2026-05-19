@@ -120,3 +120,23 @@ class AccountCreateRequest {
     };
   }
 }
+
+class AccountUpdateRequest {
+  final String? name;
+  final AccountType? type;
+  final double? currentBalance;
+
+  const AccountUpdateRequest({
+    this.name,
+    this.type,
+    this.currentBalance,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (name != null) 'name': name,
+      if (type != null) 'type': type!.apiValue,
+      if (currentBalance != null) 'current_balance': currentBalance,
+    };
+  }
+}

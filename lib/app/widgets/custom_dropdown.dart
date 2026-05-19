@@ -183,3 +183,38 @@ class CategoryDropdown extends StatelessWidget {
     );
   }
 }
+
+class CategoryTypeDropdown extends StatelessWidget {
+  final String? value;
+  final ValueChanged<String?>? onChanged;
+  final String? errorText;
+
+  const CategoryTypeDropdown({
+    super.key,
+    this.value,
+    this.onChanged,
+    this.errorText,
+  });
+
+  static const List<Map<String, String>> categoryTypes = [
+    {'value': 'expense', 'label': 'Expense'},
+    {'value': 'income', 'label': 'Income'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomDropdown<String>(
+      value: value,
+      label: 'Category Type',
+      prefixIcon: Icons.label_outline,
+      errorText: errorText,
+      items: categoryTypes
+          .map((t) => DropdownMenuItem(
+                value: t['value'],
+                child: Text(t['label']!),
+              ))
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+}

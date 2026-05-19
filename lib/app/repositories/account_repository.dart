@@ -64,6 +64,63 @@ class AccountRepository {
     }
   }
 
+  Future<ApiResponse<AccountModel>> getAccount(String id) async {
+    try {
+      final response =
+          await _apiService.get('${ApiEndpoints.getAccount}/$id');
+      if (response.statusCode == 200) {
+        final account =
+            AccountModel.fromJson(response.data as Map<String, dynamic>);
+        return ApiResponse.success(account, statusCode: response.statusCode);
+      }
+      return ApiResponse.error('Failed to fetch account',
+          statusCode: response.statusCode);
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    } catch (e) {
+      return ApiResponse.error('An unexpected error occurred');
+    }
+  }
+
+  Future<ApiResponse<AccountModel>> updateAccount(
+      String id, AccountUpdateRequest request) async {
+    try {
+      final response = await _apiService.patch(
+        '${ApiEndpoints.updateAccount}/$id',
+        data: request.toJson(),
+      );
+      if (response.statusCode == 200) {
+        final account =
+            AccountModel.fromJson(response.data as Map<String, dynamic>);
+        return ApiResponse.success(account, statusCode: response.statusCode);
+      }
+      return ApiResponse.error('Failed to update account',
+          statusCode: response.statusCode);
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    } catch (e) {
+      return ApiResponse.error('An unexpected error occurred');
+    }
+  }
+
+  Future<ApiResponse<void>> deleteAccount(String id) async {
+    try {
+      final response =
+          await _apiService.delete('${ApiEndpoints.deleteAccount}/$id');
+      if (response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          response.statusCode == 202) {
+        return ApiResponse.success(null, statusCode: response.statusCode);
+      }
+      return ApiResponse.error('Failed to delete account',
+          statusCode: response.statusCode);
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    } catch (e) {
+      return ApiResponse.error('An unexpected error occurred');
+    }
+  }
+
   ApiResponse<T> _handleDioError<T>(DioException e) {
     final message = ApiService.extractErrorMessage(e);
     return ApiResponse.error(message, statusCode: e.response?.statusCode);

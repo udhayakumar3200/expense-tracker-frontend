@@ -10,6 +10,7 @@ import '../../widgets/balance_card.dart';
 import '../../widgets/account_tile.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/account_detail_sheet.dart';
 
 class DashboardScreen extends GetView<DashboardController> {
   const DashboardScreen({super.key});
@@ -20,6 +21,11 @@ class DashboardScreen extends GetView<DashboardController> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.label_outline),
+            onPressed: () => Get.toNamed(AppRoutes.categories),
+            tooltip: 'Categories',
+          ),
           IconButton(
             icon: const Icon(Icons.list_alt),
             onPressed: () => Get.toNamed(AppRoutes.transactionList),
@@ -72,7 +78,10 @@ class DashboardScreen extends GetView<DashboardController> {
                 )
               else
                 ...controller.accounts.map(
-                  (account) => AccountTile(account: account),
+                  (account) => AccountTile(
+                    account: account,
+                    onTap: () => AccountDetailSheet.show(account),
+                  ),
                 ),
             ],
           ),

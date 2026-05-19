@@ -82,3 +82,20 @@ class CategoryCreateRequest {
     };
   }
 }
+
+class CategoryUpdateRequest {
+  final String? name;
+  final CategoryType? type;
+
+  const CategoryUpdateRequest({
+    this.name,
+    this.type,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (name != null) 'name': name,
+      if (type != null) 'type': type!.apiValue,
+    };
+  }
+}

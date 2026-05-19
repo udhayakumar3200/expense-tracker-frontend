@@ -13,16 +13,32 @@ class TransactionController extends GetxController {
   final AccountRepository _accountRepository = AccountRepository();
   final CategoryRepository _categoryRepository = CategoryRepository();
 
+  // Form fields for create
   final amountController = TextEditingController();
   final descriptionController = TextEditingController();
 
+  // Transaction list state
   final RxList<TransactionModel> transactions = <TransactionModel>[].obs;
   final RxList<AccountModel> accounts = <AccountModel>[].obs;
   final RxList<CategoryModel> categories = <CategoryModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isSubmitting = false.obs;
+  final RxBool isLoadingMore = false.obs;
+  final RxBool hasMore = false.obs;
   final RxString errorMessage = ''.obs;
 
+  // Pagination
+  static const int _pageSize = 20;
+  int _currentOffset = 0;
+
+  // Filter state
+  final RxnString filterType = RxnString();
+  final RxnString filterFromAccountId = RxnString();
+  final RxnString filterCategoryId = RxnString();
+  final Rx<DateTime?> filterDateFrom = Rx<DateTime?>(null);
+  final Rx<DateTime?> filterDateTo = Rx<DateTime?>(null);
+
+  // Form state for create
   final RxString selectedTransactionType = 'expense'.obs;
   final RxnString selectedFromAccountId = RxnString();
   final RxnString selectedToAccountId = RxnString();
@@ -70,23 +86,94 @@ class TransactionController extends GetxController {
   Future<void> fetchTransactions() async {
     isLoading.value = true;
     errorMessage.value = '';
+    _currentOffset = 0;
 
-    final response = await _transactionRepository.getTransactions();
+    final response = await _transactionRepository.getTransactions(
+      limit: _pageSize,
+      offset: 0,
+      transactionType: filterType.value,
+      fromAccountId: filterFromAccountId.value,
+      categoryId: filterCategoryId.value,
+      dateFrom: filterDateFrom.value,
+      dateTo: filterDateTo.value,
+    );
 
     isLoading.value = false;
 
     if (response.success && response.data != null) {
       transactions.value = response.data!;
+      hasMore.value = response.data!.length == _pageSize;
+      _currentOffset = response.data!.length;
     } else {
-      errorMessage.value = response.message ?? 'Failed to fetch transactions';
+      errorMessage.value =
+          response.message ?? 'Failed to fetch transactions';
     }
   }
+
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || !hasMore.value) return;
+    isLoadingMore.value = true;
+
+    final response = await _transactionRepository.getTransactions(
+      limit: _pageSize,
+      offset: _currentOffset,
+      transactionType: filterType.value,
+      fromAccountId: filterFromAccountId.value,
+      categoryId: filterCategoryId.value,
+      dateFrom: filterDateFrom.value,
+      dateTo: filterDateTo.value,
+    );
+
+    isLoadingMore.value = false;
+
+    if (response.success && response.data != null) {
+      transactions.addAll(response.data!);
+      hasMore.value = response.data!.length == _pageSize;
+      _currentOffset += response.data!.length;
+    }
+  }
+
+  Future<void> refreshTransactions() async {
+    await fetchTransactions();
+  }
+
+  void applyFilters({
+    String? type,
+    String? fromAccountId,
+    String? categoryId,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) {
+    filterType.value = type;
+    filterFromAccountId.value = fromAccountId;
+    filterCategoryId.value = categoryId;
+    filterDateFrom.value = dateFrom;
+    filterDateTo.value = dateTo;
+    fetchTransactions();
+  }
+
+  void clearFilters() {
+    filterType.value = null;
+    filterFromAccountId.value = null;
+    filterCategoryId.value = null;
+    filterDateFrom.value = null;
+    filterDateTo.value = null;
+    fetchTransactions();
+  }
+
+  bool get hasActiveFilters =>
+      filterType.value != null ||
+      filterFromAccountId.value != null ||
+      filterCategoryId.value != null ||
+      filterDateFrom.value != null ||
+      filterDateTo.value != null;
 
   void clearFields() {
     amountController.clear();
     descriptionController.clear();
     selectedTransactionType.value = 'expense';
-    selectedFromAccountId.value = accounts.isNotEmpty ? accounts.first.id : null;
+    selectedFromAccountId.value =
+        accounts.isNotEmpty ? accounts.first.id : null;
     selectedToAccountId.value = null;
     selectedCategoryId.value = null;
     selectedDate.value = DateTime.now();
@@ -100,7 +187,6 @@ class TransactionController extends GetxController {
     errorMessage.value = '';
 
     final amount = double.tryParse(amountController.text.trim()) ?? 0;
-
     final type = selectedTransactionType.value;
     String? fromAccountId;
     String? toAccountId;
@@ -136,20 +222,15 @@ class TransactionController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-
       if (Get.isRegistered<DashboardController>()) {
         Get.find<DashboardController>().refreshData();
       }
-
       clearFields();
       Get.back();
     } else {
-      errorMessage.value = response.message ?? 'Failed to create transaction';
+      errorMessage.value =
+          response.message ?? 'Failed to create transaction';
     }
-  }
-
-  Future<void> refreshTransactions() async {
-    await fetchTransactions();
   }
 
   void selectDate(BuildContext context) async {
@@ -169,35 +250,33 @@ class TransactionController extends GetxController {
       errorMessage.value = 'Amount is required';
       return false;
     }
-
     final amount = double.tryParse(amountController.text.trim());
     if (amount == null || amount <= 0) {
       errorMessage.value = 'Please enter a valid amount greater than 0';
       return false;
     }
-
     final txType = selectedTransactionType.value;
     if (txType == 'expense' && selectedFromAccountId.value == null) {
       errorMessage.value = 'Expense requires a source account';
       return false;
     }
-
     if (txType == 'income' && selectedToAccountId.value == null) {
       errorMessage.value = 'Income requires a destination account';
       return false;
     }
-
     if (txType == 'transfer') {
-      if (selectedFromAccountId.value == null || selectedToAccountId.value == null) {
-        errorMessage.value = 'Transfer requires both source and destination accounts';
+      if (selectedFromAccountId.value == null ||
+          selectedToAccountId.value == null) {
+        errorMessage.value =
+            'Transfer requires both source and destination accounts';
         return false;
       }
       if (selectedFromAccountId.value == selectedToAccountId.value) {
-        errorMessage.value = 'Source and destination accounts must be different';
+        errorMessage.value =
+            'Source and destination accounts must be different';
         return false;
       }
     }
-
     return true;
   }
 
@@ -207,7 +286,9 @@ class TransactionController extends GetxController {
   }
 
   List<CategoryModel> get categoriesForSelectedType {
-    if (selectedTransactionType.value == 'transfer') return const <CategoryModel>[];
+    if (selectedTransactionType.value == 'transfer') {
+      return const <CategoryModel>[];
+    }
     return categories
         .where((c) => c.type.apiValue == selectedTransactionType.value)
         .toList();

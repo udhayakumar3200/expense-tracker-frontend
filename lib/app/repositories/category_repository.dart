@@ -66,4 +66,49 @@ class CategoryRepository {
       return ApiResponse.error('An unexpected error occurred');
     }
   }
+
+  Future<ApiResponse<CategoryModel>> getCategory(String id) async {
+    try {
+      final response =
+          await _apiService.get('${ApiEndpoints.getCategory}/$id');
+      if (response.statusCode == 200) {
+        final category =
+            CategoryModel.fromJson(response.data as Map<String, dynamic>);
+        return ApiResponse.success(category, statusCode: response.statusCode);
+      }
+      return ApiResponse.error('Failed to fetch category',
+          statusCode: response.statusCode);
+    } on DioException catch (e) {
+      return ApiResponse.error(
+        ApiService.extractErrorMessage(e),
+        statusCode: e.response?.statusCode,
+      );
+    } catch (_) {
+      return ApiResponse.error('An unexpected error occurred');
+    }
+  }
+
+  Future<ApiResponse<CategoryModel>> updateCategory(
+      String id, CategoryUpdateRequest request) async {
+    try {
+      final response = await _apiService.patch(
+        '${ApiEndpoints.updateCategory}/$id',
+        data: request.toJson(),
+      );
+      if (response.statusCode == 200) {
+        final category =
+            CategoryModel.fromJson(response.data as Map<String, dynamic>);
+        return ApiResponse.success(category, statusCode: response.statusCode);
+      }
+      return ApiResponse.error('Failed to update category',
+          statusCode: response.statusCode);
+    } on DioException catch (e) {
+      return ApiResponse.error(
+        ApiService.extractErrorMessage(e),
+        statusCode: e.response?.statusCode,
+      );
+    } catch (_) {
+      return ApiResponse.error('An unexpected error occurred');
+    }
+  }
 }

@@ -136,3 +136,36 @@ class TransactionCreateRequest {
     };
   }
 }
+
+class TransactionUpdateRequest {
+  final double? amount;
+  final TransactionType? type;
+  final DateTime? transactionDate;
+  final String? fromAccountId;
+  final String? toAccountId;
+  final String? categoryId;
+  final String? description;
+
+  const TransactionUpdateRequest({
+    this.amount,
+    this.type,
+    this.transactionDate,
+    this.fromAccountId,
+    this.toAccountId,
+    this.categoryId,
+    this.description,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (amount != null) 'amount': amount,
+      if (type != null) 'type': type!.apiValue,
+      if (transactionDate != null)
+        'transaction_date': transactionDate!.toIso8601String(),
+      if (fromAccountId != null) 'from_account_id': fromAccountId,
+      if (toAccountId != null) 'to_account_id': toAccountId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (description != null) 'description': description,
+    };
+  }
+}

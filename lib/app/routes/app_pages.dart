@@ -10,6 +10,8 @@ import '../modules/dashboard/dashboard_screen.dart';
 import '../modules/accounts/add_account_screen.dart';
 import '../modules/transactions/add_transaction_screen.dart';
 import '../modules/transactions/transaction_list_screen.dart';
+import '../bindings/category_binding.dart';
+import '../modules/categories/category_management_screen.dart';
 
 class AppPages {
   static final pages = [
@@ -41,6 +43,11 @@ class AppPages {
       name: AppRoutes.transactionList,
       page: () => const TransactionListScreen(),
       binding: TransactionBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.categories,
+      page: () => const CategoryManagementScreen(),
+      binding: CategoryBinding(),
     ),
   ];
 }
