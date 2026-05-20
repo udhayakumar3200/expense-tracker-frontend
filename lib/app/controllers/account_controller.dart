@@ -40,12 +40,14 @@ class AccountController extends GetxController {
     isLoading.value = true;
     errorMessage.value = '';
 
-    final balance = double.tryParse(balanceController.text.trim()) ?? 0;
+    final amount = double.tryParse(balanceController.text.trim()) ?? 0;
+    final isCreditCard = selectedAccountType.value == 'credit_card';
 
     final response = await _accountRepository.createAccount(
       name: nameController.text.trim(),
       accountType: selectedAccountType.value,
-      balance: balance,
+      balance: isCreditCard ? 0 : amount,
+      creditLimit: isCreditCard ? amount : null,
     );
 
     isLoading.value = false;
@@ -76,13 +78,29 @@ class AccountController extends GetxController {
       return false;
     }
 
-    if (balanceController.text.trim().isEmpty) {
-      errorMessage.value = 'Initial balance is required';
+    final isCreditCard = selectedAccountType.value == 'credit_card';
+    final fieldLabel = isCreditCard ? 'Credit limit' : 'Initial balance';
+    final text = balanceController.text.trim();
+
+    if (text.isEmpty) {
+      errorMessage.value = '$fieldLabel is required';
       return false;
     }
 
-    if (double.tryParse(balanceController.text.trim()) == null) {
-      errorMessage.value = 'Please enter a valid balance amount';
+    final parsed = double.tryParse(text);
+    if (parsed == null) {
+      errorMessage.value =
+          'Please enter a valid ${fieldLabel.toLowerCase()} amount';
+      return false;
+    }
+
+    if (parsed < 0) {
+      errorMessage.value = '$fieldLabel cannot be negative';
+      return false;
+    }
+
+    if (isCreditCard && parsed <= 0) {
+      errorMessage.value = 'Credit limit must be greater than 0';
       return false;
     }
 

@@ -5,6 +5,7 @@ import '../../controllers/transaction_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../models/account_model.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_button.dart';
@@ -55,7 +56,7 @@ class AddTransactionScreen extends GetView<TransactionController> {
               ),
               AppSpacing.verticalMd,
               if (controller.selectedTransactionType.value == 'expense' ||
-                  controller.selectedTransactionType.value == 'transfer')
+                  controller.selectedTransactionType.value == 'transfer') ...[
                 CustomDropdown<String>(
                   value: controller.selectedFromAccountId.value,
                   label: 'From Account',
@@ -63,13 +64,19 @@ class AddTransactionScreen extends GetView<TransactionController> {
                   items: controller.accounts
                       .map((account) => DropdownMenuItem(
                             value: account.id,
-                            child: Text('${account.name} (${account.displayType})'),
+                            child: Text(_accountDropdownLabel(account, isFrom: true)),
                           ))
                       .toList(),
                   onChanged: (value) {
                     controller.selectedFromAccountId.value = value;
                   },
                 ),
+                _CreditCardCaption(
+                  account: controller.accountById(
+                      controller.selectedFromAccountId.value),
+                  isFrom: true,
+                ),
+              ],
               if (controller.selectedTransactionType.value == 'income' ||
                   controller.selectedTransactionType.value == 'transfer') ...[
                 AppSpacing.verticalMd,
@@ -83,12 +90,17 @@ class AddTransactionScreen extends GetView<TransactionController> {
                           a.id != controller.selectedFromAccountId.value)
                       .map((account) => DropdownMenuItem(
                             value: account.id,
-                            child: Text('${account.name} (${account.displayType})'),
+                            child: Text(_accountDropdownLabel(account, isFrom: false)),
                           ))
                       .toList(),
                   onChanged: (value) {
                     controller.selectedToAccountId.value = value;
                   },
+                ),
+                _CreditCardCaption(
+                  account: controller.accountById(
+                      controller.selectedToAccountId.value),
+                  isFrom: false,
                 ),
               ],
               if (controller.selectedTransactionType.value != 'transfer') ...[
@@ -131,6 +143,42 @@ class AddTransactionScreen extends GetView<TransactionController> {
           ),
         );
       }),
+    );
+  }
+}
+
+String _accountDropdownLabel(AccountModel account, {required bool isFrom}) {
+  final base = '${account.name} (${account.displayType})';
+  if (!account.isCreditCard) return base;
+  final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+  if (isFrom) {
+    return '$base · Avail ${currency.format(account.availableCredit)}';
+  }
+  return '$base · Outstanding ${currency.format(account.outstandingBalance ?? 0)}';
+}
+
+class _CreditCardCaption extends StatelessWidget {
+  final AccountModel? account;
+  final bool isFrom;
+
+  const _CreditCardCaption({required this.account, required this.isFrom});
+
+  @override
+  Widget build(BuildContext context) {
+    final acc = account;
+    if (acc == null || !acc.isCreditCard) {
+      return const SizedBox.shrink();
+    }
+    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final label = isFrom
+        ? 'Available credit: ${currency.format(acc.availableCredit)}'
+        : 'Outstanding: ${currency.format(acc.outstandingBalance ?? 0)}';
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs, left: AppSpacing.sm),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+      ),
     );
   }
 }

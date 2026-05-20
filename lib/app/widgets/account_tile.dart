@@ -38,6 +38,39 @@ class AccountTile extends StatelessWidget {
     final iconColor = AppColors.getAccountColor(account.accountType);
     final iconBgColor = AppColors.getAccountLightColor(account.accountType);
 
+    Widget? trailing;
+    if (showBalance) {
+      if (account.isCreditCard) {
+        trailing = Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              currencyFormat.format(account.outstandingBalance ?? 0),
+              style: AppTextStyles.bodyMediumBold.copyWith(
+                color: AppColors.expense,
+              ),
+            ),
+            Text(
+              'Avail ${currencyFormat.format(account.availableCredit)}',
+              style: AppTextStyles.caption,
+            ),
+          ],
+        );
+      } else {
+        trailing = Text(
+          currencyFormat.format(account.balance),
+          style: AppTextStyles.bodyLargeBold.copyWith(
+            color: account.balance >= 0
+                ? AppColors.income
+                : AppColors.expense,
+          ),
+        );
+      }
+    } else {
+      trailing = const Icon(Icons.chevron_right);
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ListTile(
@@ -58,16 +91,7 @@ class AccountTile extends StatelessWidget {
           account.displayType,
           style: AppTextStyles.caption,
         ),
-        trailing: showBalance
-            ? Text(
-                currencyFormat.format(account.balance),
-                style: AppTextStyles.bodyLargeBold.copyWith(
-                  color: account.balance >= 0
-                      ? AppColors.income
-                      : AppColors.expense,
-                ),
-              )
-            : const Icon(Icons.chevron_right),
+        trailing: trailing,
       ),
     );
   }

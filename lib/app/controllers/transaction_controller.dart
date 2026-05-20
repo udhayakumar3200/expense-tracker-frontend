@@ -246,39 +246,82 @@ class TransactionController extends GetxController {
   }
 
   bool _validateFields() {
-    if (amountController.text.trim().isEmpty) {
-      errorMessage.value = 'Amount is required';
+    final error = validateTransaction(
+      type: selectedTransactionType.value,
+      amountText: amountController.text.trim(),
+      fromAccountId: selectedFromAccountId.value,
+      toAccountId: selectedToAccountId.value,
+      accounts: accounts,
+    );
+    if (error != null) {
+      errorMessage.value = error;
       return false;
-    }
-    final amount = double.tryParse(amountController.text.trim());
-    if (amount == null || amount <= 0) {
-      errorMessage.value = 'Please enter a valid amount greater than 0';
-      return false;
-    }
-    final txType = selectedTransactionType.value;
-    if (txType == 'expense' && selectedFromAccountId.value == null) {
-      errorMessage.value = 'Expense requires a source account';
-      return false;
-    }
-    if (txType == 'income' && selectedToAccountId.value == null) {
-      errorMessage.value = 'Income requires a destination account';
-      return false;
-    }
-    if (txType == 'transfer') {
-      if (selectedFromAccountId.value == null ||
-          selectedToAccountId.value == null) {
-        errorMessage.value =
-            'Transfer requires both source and destination accounts';
-        return false;
-      }
-      if (selectedFromAccountId.value == selectedToAccountId.value) {
-        errorMessage.value =
-            'Source and destination accounts must be different';
-        return false;
-      }
     }
     return true;
   }
+
+  /// Shared validator used by both the create screen and the edit sheet.
+  /// Returns an error message or `null` if all rules pass.
+  static String? validateTransaction({
+    required String type,
+    required String amountText,
+    required String? fromAccountId,
+    required String? toAccountId,
+    required List<AccountModel> accounts,
+  }) {
+    if (amountText.isEmpty) {
+      return 'Amount is required';
+    }
+    final amount = double.tryParse(amountText);
+    if (amount == null || amount <= 0) {
+      return 'Please enter a valid amount greater than 0';
+    }
+
+    AccountModel? lookup(String? id) =>
+        id == null ? null : accounts.firstWhereOrNull((a) => a.id == id);
+    final fromAccount = lookup(fromAccountId);
+    final toAccount = lookup(toAccountId);
+
+    if (type == 'expense') {
+      if (fromAccount == null) return 'Expense requires a source account';
+      if (fromAccount.isCreditCard && amount > fromAccount.availableCredit) {
+        return 'Amount exceeds available credit (\$${fromAccount.availableCredit.toStringAsFixed(2)})';
+      }
+      return null;
+    }
+
+    if (type == 'income') {
+      if (toAccount == null) return 'Income requires a destination account';
+      if (toAccount.isCreditCard) {
+        return 'Income cannot be added to a credit card. Use Transfer to pay the bill.';
+      }
+      return null;
+    }
+
+    if (type == 'transfer') {
+      if (fromAccount == null || toAccount == null) {
+        return 'Transfer requires both source and destination accounts';
+      }
+      if (fromAccount.id == toAccount.id) {
+        return 'Source and destination accounts must be different';
+      }
+      if (fromAccount.isCreditCard) {
+        return 'Cannot transfer from a credit card account';
+      }
+      if (toAccount.isCreditCard) {
+        final outstanding = toAccount.outstandingBalance ?? 0;
+        if (amount > outstanding) {
+          return 'Payment exceeds outstanding balance (\$${outstanding.toStringAsFixed(2)})';
+        }
+      }
+      return null;
+    }
+
+    return null;
+  }
+
+  AccountModel? accountById(String? id) =>
+      id == null ? null : accounts.firstWhereOrNull((a) => a.id == id);
 
   String getAccountName(String accountId) {
     final account = accounts.firstWhereOrNull((a) => a.id == accountId);

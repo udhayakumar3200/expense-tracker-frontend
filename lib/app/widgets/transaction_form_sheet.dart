@@ -79,22 +79,15 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText);
 
-    if (amount == null || amount <= 0) {
-      setState(() => _errorMessage = 'Enter a valid amount greater than 0');
-      return;
-    }
-    if (_selectedType == 'expense' && _selectedFromAccountId == null) {
-      setState(() => _errorMessage = 'Select a source account');
-      return;
-    }
-    if (_selectedType == 'income' && _selectedToAccountId == null) {
-      setState(() => _errorMessage = 'Select a destination account');
-      return;
-    }
-    if (_selectedType == 'transfer' &&
-        (_selectedFromAccountId == null || _selectedToAccountId == null)) {
-      setState(
-          () => _errorMessage = 'Transfer requires both source and destination');
+    final error = TransactionController.validateTransaction(
+      type: _selectedType,
+      amountText: amountText,
+      fromAccountId: _selectedFromAccountId,
+      toAccountId: _selectedToAccountId,
+      accounts: _ctrl.accounts,
+    );
+    if (error != null) {
+      setState(() => _errorMessage = error);
       return;
     }
 
@@ -141,13 +134,39 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     }
   }
 
-  List<Map<String, dynamic>> get _accountItems => _ctrl.accounts
-      .map((a) => <String, dynamic>{
-            'id': a.id,
-            'name': a.name,
-            'type': a.displayType,
-          })
-      .toList();
+  List<DropdownMenuItem<String>> _accountDropdownItems({
+    required bool isFrom,
+    String? excludeId,
+  }) {
+    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    return _ctrl.accounts
+        .where((a) => excludeId == null || a.id != excludeId)
+        .map((a) {
+      var label = '${a.name} (${a.displayType})';
+      if (a.isCreditCard) {
+        label += isFrom
+            ? ' · Avail ${currency.format(a.availableCredit)}'
+            : ' · Outstanding ${currency.format(a.outstandingBalance ?? 0)}';
+      }
+      return DropdownMenuItem<String>(value: a.id, child: Text(label));
+    }).toList();
+  }
+
+  Widget _ccCaption(String? accountId, {required bool isFrom}) {
+    final acc = _ctrl.accountById(accountId);
+    if (acc == null || !acc.isCreditCard) return const SizedBox.shrink();
+    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final label = isFrom
+        ? 'Available credit: ${currency.format(acc.availableCredit)}'
+        : 'Outstanding: ${currency.format(acc.outstandingBalance ?? 0)}';
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs, left: AppSpacing.sm),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+      ),
+    );
+  }
 
   List<Map<String, dynamic>> get _categoryItems {
     if (_selectedType == 'transfer') return [];
@@ -201,22 +220,31 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             CustomAmountField(controller: _amountController),
             AppSpacing.verticalMd,
             if (_selectedType == 'expense' || _selectedType == 'transfer') ...[
-              AccountDropdown(
+              CustomDropdown<String>(
                 value: _selectedFromAccountId,
                 label: 'From Account',
-                accounts: _accountItems,
+                prefixIcon: Icons.account_balance,
+                items: _accountDropdownItems(isFrom: true),
                 onChanged: (v) =>
                     setState(() => _selectedFromAccountId = v),
               ),
+              _ccCaption(_selectedFromAccountId, isFrom: true),
               AppSpacing.verticalMd,
             ],
             if (_selectedType == 'income' || _selectedType == 'transfer') ...[
-              AccountDropdown(
+              CustomDropdown<String>(
                 value: _selectedToAccountId,
                 label: 'To Account',
-                accounts: _accountItems,
+                prefixIcon: Icons.account_balance,
+                items: _accountDropdownItems(
+                  isFrom: false,
+                  excludeId: _selectedType == 'transfer'
+                      ? _selectedFromAccountId
+                      : null,
+                ),
                 onChanged: (v) => setState(() => _selectedToAccountId = v),
               ),
+              _ccCaption(_selectedToAccountId, isFrom: false),
               AppSpacing.verticalMd,
             ],
             if (_selectedType != 'transfer' && _categoryItems.isNotEmpty) ...[

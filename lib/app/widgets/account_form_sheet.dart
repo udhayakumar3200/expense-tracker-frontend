@@ -40,8 +40,11 @@ class _AccountFormSheetState extends State<AccountFormSheet> {
     super.initState();
     _nameController =
         TextEditingController(text: widget.account.name);
-    _balanceController = TextEditingController(
-        text: widget.account.currentBalance.toStringAsFixed(2));
+    final initialAmount = widget.account.isCreditCard
+        ? (widget.account.creditLimit ?? 0)
+        : widget.account.currentBalance;
+    _balanceController =
+        TextEditingController(text: initialAmount.toStringAsFixed(2));
     _selectedType = widget.account.type.apiValue;
   }
 
@@ -54,14 +57,25 @@ class _AccountFormSheetState extends State<AccountFormSheet> {
 
   Future<void> _submit() async {
     final name = _nameController.text.trim();
-    final balanceText = _balanceController.text.trim();
+    final amountText = _balanceController.text.trim();
+    final isCreditCard = _selectedType == 'credit_card';
+    final fieldLabel = isCreditCard ? 'credit limit' : 'balance';
 
     if (name.isEmpty) {
       setState(() => _errorMessage = 'Account name is required');
       return;
     }
-    if (balanceText.isEmpty || double.tryParse(balanceText) == null) {
-      setState(() => _errorMessage = 'Please enter a valid balance');
+    final parsed = double.tryParse(amountText);
+    if (amountText.isEmpty || parsed == null) {
+      setState(() => _errorMessage = 'Please enter a valid $fieldLabel');
+      return;
+    }
+    if (isCreditCard && parsed <= 0) {
+      setState(() => _errorMessage = 'Credit limit must be greater than 0');
+      return;
+    }
+    if (!isCreditCard && parsed < 0) {
+      setState(() => _errorMessage = 'Balance cannot be negative');
       return;
     }
 
@@ -76,7 +90,8 @@ class _AccountFormSheetState extends State<AccountFormSheet> {
       AccountUpdateRequest(
         name: name,
         type: AccountTypeX.fromApi(_selectedType),
-        currentBalance: double.parse(balanceText),
+        currentBalance: isCreditCard ? null : parsed,
+        creditLimit: isCreditCard ? parsed : null,
       ),
     );
 
@@ -146,7 +161,12 @@ class _AccountFormSheetState extends State<AccountFormSheet> {
                   setState(() => _selectedType = v ?? _selectedType),
             ),
             AppSpacing.verticalMd,
-            CustomAmountField(controller: _balanceController),
+            CustomAmountField(
+              controller: _balanceController,
+              label: _selectedType == 'credit_card'
+                  ? 'Credit Limit'
+                  : 'Current Balance',
+            ),
             if (_errorMessage.isNotEmpty) ...[
               AppSpacing.verticalSm,
               ErrorText(message: _errorMessage),

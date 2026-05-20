@@ -1,17 +1,14 @@
 import 'package:get/get.dart';
 import 'app_routes.dart';
 import '../bindings/auth_binding.dart';
-import '../bindings/dashboard_binding.dart';
 import '../bindings/account_binding.dart';
 import '../bindings/transaction_binding.dart';
 import '../modules/splash/splash_screen.dart';
 import '../modules/auth/login_screen.dart';
-import '../modules/dashboard/dashboard_screen.dart';
+import '../modules/main/main_binding.dart';
+import '../modules/main/main_screen.dart';
 import '../modules/accounts/add_account_screen.dart';
 import '../modules/transactions/add_transaction_screen.dart';
-import '../modules/transactions/transaction_list_screen.dart';
-import '../bindings/category_binding.dart';
-import '../modules/categories/category_management_screen.dart';
 
 class AppPages {
   static final pages = [
@@ -26,8 +23,8 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.dashboard,
-      page: () => const DashboardScreen(),
-      binding: DashboardBinding(),
+      page: () => const MainScreen(),
+      binding: MainBinding(),
     ),
     GetPage(
       name: AppRoutes.addAccount,
@@ -38,16 +35,6 @@ class AppPages {
       name: AppRoutes.addTransaction,
       page: () => const AddTransactionScreen(),
       binding: TransactionBinding(),
-    ),
-    GetPage(
-      name: AppRoutes.transactionList,
-      page: () => const TransactionListScreen(),
-      binding: TransactionBinding(),
-    ),
-    GetPage(
-      name: AppRoutes.categories,
-      page: () => const CategoryManagementScreen(),
-      binding: CategoryBinding(),
     ),
   ];
 }

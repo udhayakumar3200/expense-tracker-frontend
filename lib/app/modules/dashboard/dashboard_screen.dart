@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/auth_controller.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/balance_card.dart';
 import '../../widgets/account_tile.dart';
@@ -22,19 +20,9 @@ class DashboardScreen extends GetView<DashboardController> {
         title: const Text('Dashboard'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.label_outline),
-            onPressed: () => Get.toNamed(AppRoutes.categories),
-            tooltip: 'Categories',
-          ),
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            onPressed: () => Get.toNamed(AppRoutes.transactionList),
-            tooltip: 'Transactions',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _showLogoutDialog,
-            tooltip: 'Logout',
+            icon: const Icon(Icons.refresh),
+            onPressed: controller.refreshData,
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -109,31 +97,4 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  void _showLogoutDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: Text('Logout', style: AppTextStyles.h4),
-        content: Text(
-          'Are you sure you want to logout?',
-          style: AppTextStyles.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              Get.put(AuthController()).logout();
-            },
-            child: Text(
-              'Logout',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -81,19 +81,52 @@ class AccountDetailSheet extends StatelessWidget {
           AppSpacing.verticalSm,
           Text(account.displayType, style: AppTextStyles.caption),
           AppSpacing.verticalMd,
-          Row(
-            children: [
-              Text('Balance: ', style: AppTextStyles.bodyMedium),
-              Text(
-                currencyFormat.format(account.currentBalance),
-                style: AppTextStyles.bodyLargeBold.copyWith(
-                  color: account.currentBalance >= 0
-                      ? AppColors.income
-                      : AppColors.expense,
+          if (account.isCreditCard) ...[
+            Row(
+              children: [
+                Text('Outstanding: ', style: AppTextStyles.bodyMedium),
+                Text(
+                  currencyFormat.format(account.outstandingBalance ?? 0),
+                  style: AppTextStyles.bodyLargeBold
+                      .copyWith(color: AppColors.expense),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+            AppSpacing.verticalXs,
+            Row(
+              children: [
+                Text('Credit limit: ', style: AppTextStyles.bodyMedium),
+                Text(
+                  currencyFormat.format(account.creditLimit ?? 0),
+                  style: AppTextStyles.bodyMedium,
+                ),
+              ],
+            ),
+            AppSpacing.verticalXs,
+            Row(
+              children: [
+                Text('Available: ', style: AppTextStyles.bodyMedium),
+                Text(
+                  currencyFormat.format(account.availableCredit),
+                  style: AppTextStyles.bodyLargeBold
+                      .copyWith(color: AppColors.income),
+                ),
+              ],
+            ),
+          ] else
+            Row(
+              children: [
+                Text('Balance: ', style: AppTextStyles.bodyMedium),
+                Text(
+                  currencyFormat.format(account.currentBalance),
+                  style: AppTextStyles.bodyLargeBold.copyWith(
+                    color: account.currentBalance >= 0
+                        ? AppColors.income
+                        : AppColors.expense,
+                  ),
+                ),
+              ],
+            ),
           AppSpacing.verticalLg,
           Row(
             children: [

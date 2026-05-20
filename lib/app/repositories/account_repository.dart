@@ -35,6 +35,7 @@ class AccountRepository {
     required String name,
     required String accountType,
     required double balance,
+    double? creditLimit,
   }) async {
     try {
       final parsedType = AccountTypeX.fromApi(accountType);
@@ -42,6 +43,7 @@ class AccountRepository {
         name: name,
         type: parsedType,
         initialBalance: balance,
+        creditLimit: creditLimit,
       );
       final response = await _apiService.post(
         ApiEndpoints.createAccount,
