@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../routes/app_routes.dart';
 import '../../widgets/transaction_tile.dart';
 import '../../widgets/transaction_detail_sheet.dart';
 import '../../widgets/transaction_filter_sheet.dart';
@@ -37,6 +38,11 @@ class TransactionListScreen extends GetView<TransactionController> {
             tooltip: 'Refresh',
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Get.toNamed(AppRoutes.addTransaction),
+        tooltip: 'Add Transaction',
+        child: const Icon(Icons.add),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {

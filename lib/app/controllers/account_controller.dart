@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../repositories/account_repository.dart';
 import 'dashboard_controller.dart';
+import 'transaction_controller.dart';
 
 class AccountController extends GetxController {
   final AccountRepository _accountRepository = AccountRepository();
@@ -59,6 +60,16 @@ class AccountController extends GetxController {
     isLoading.value = false;
 
     if (response.success) {
+      if (Get.isRegistered<DashboardController>()) {
+        Get.find<DashboardController>().refreshData();
+      }
+      if (Get.isRegistered<TransactionController>()) {
+        Get.find<TransactionController>().fetchAccounts();
+      }
+
+      clearFields();
+      Get.back();
+
       Get.snackbar(
         'Success',
         'Account created successfully!',
@@ -66,13 +77,6 @@ class AccountController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-
-      if (Get.isRegistered<DashboardController>()) {
-        Get.find<DashboardController>().refreshData();
-      }
-
-      clearFields();
-      Get.back();
     } else {
       errorMessage.value = response.message ?? 'Failed to create account';
     }
