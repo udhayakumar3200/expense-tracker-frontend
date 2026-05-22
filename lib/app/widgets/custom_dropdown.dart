@@ -86,12 +86,14 @@ class TransactionTypeDropdown extends StatelessWidget {
   final String? value;
   final ValueChanged<String?>? onChanged;
   final String? errorText;
+  final bool isCreditCardContext;
 
   const TransactionTypeDropdown({
     super.key,
     this.value,
     this.onChanged,
     this.errorText,
+    this.isCreditCardContext = false,
   });
 
   static const List<Map<String, String>> transactionTypes = [
@@ -100,14 +102,20 @@ class TransactionTypeDropdown extends StatelessWidget {
     {'value': 'transfer', 'label': 'Transfer'},
   ];
 
+  static const List<Map<String, String>> creditCardTypes = [
+    {'value': 'expense', 'label': 'Credit Expense'},
+    {'value': 'transfer', 'label': 'Card Repayment'},
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final types = isCreditCardContext ? creditCardTypes : transactionTypes;
     return CustomDropdown<String>(
       value: value,
       label: 'Transaction Type',
       prefixIcon: Icons.swap_vert,
       errorText: errorText,
-      items: transactionTypes
+      items: types
           .map((type) => DropdownMenuItem(
                 value: type['value'],
                 child: Text(type['label']!),

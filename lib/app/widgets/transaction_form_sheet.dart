@@ -168,6 +168,16 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     );
   }
 
+  bool get _isCreditCardContext {
+    final fromAcc = _ctrl.accountById(_selectedFromAccountId);
+    if (fromAcc?.isCreditCard == true) return true;
+    if (_selectedType == 'transfer') {
+      final toAcc = _ctrl.accountById(_selectedToAccountId);
+      return toAcc?.isCreditCard == true;
+    }
+    return false;
+  }
+
   List<Map<String, dynamic>> get _categoryItems {
     if (_selectedType == 'transfer') return [];
     return _ctrl.categories
@@ -211,10 +221,27 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             AppSpacing.verticalMd,
             TransactionTypeDropdown(
               value: _selectedType,
-              onChanged: (v) => setState(() {
-                _selectedType = v ?? _selectedType;
-                _selectedCategoryId = null;
-              }),
+              isCreditCardContext: _isCreditCardContext,
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() {
+                  final prevFromId = _selectedFromAccountId;
+                  final prevToId = _selectedToAccountId;
+                  final isFromCC = _ctrl.accountById(prevFromId)?.isCreditCard ?? false;
+                  final isToCC = _ctrl.accountById(prevToId)?.isCreditCard ?? false;
+
+                  _selectedType = v;
+                  _selectedCategoryId = null;
+
+                  if (isFromCC && v == 'transfer') {
+                    _selectedToAccountId = prevFromId;
+                    _selectedFromAccountId = null;
+                  } else if (isToCC && v == 'expense') {
+                    _selectedFromAccountId = prevToId;
+                    _selectedToAccountId = null;
+                  }
+                });
+              },
             ),
             AppSpacing.verticalMd,
             CustomAmountField(controller: _amountController),

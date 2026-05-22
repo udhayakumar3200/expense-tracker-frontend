@@ -323,6 +323,16 @@ class TransactionController extends GetxController {
   AccountModel? accountById(String? id) =>
       id == null ? null : accounts.firstWhereOrNull((a) => a.id == id);
 
+  bool get isCreditCardContext {
+    final fromAcc = accountById(selectedFromAccountId.value);
+    if (fromAcc?.isCreditCard == true) return true;
+    if (selectedTransactionType.value == 'transfer') {
+      final toAcc = accountById(selectedToAccountId.value);
+      return toAcc?.isCreditCard == true;
+    }
+    return false;
+  }
+
   String getAccountName(String accountId) {
     final account = accounts.firstWhereOrNull((a) => a.id == accountId);
     return account?.name ?? 'Unknown';

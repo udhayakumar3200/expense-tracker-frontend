@@ -41,12 +41,29 @@ class AddTransactionScreen extends GetView<TransactionController> {
             children: [
               TransactionTypeDropdown(
                 value: controller.selectedTransactionType.value,
+                isCreditCardContext: controller.isCreditCardContext,
                 onChanged: (value) {
                   if (value != null) {
+                    final prevFromId = controller.selectedFromAccountId.value;
+                    final prevToId = controller.selectedToAccountId.value;
+                    final isFromCC = controller.accountById(prevFromId)?.isCreditCard ?? false;
+                    final isToCC = controller.accountById(prevToId)?.isCreditCard ?? false;
+
                     controller.selectedTransactionType.value = value;
-                    controller.selectedFromAccountId.value = null;
-                    controller.selectedToAccountId.value = null;
                     controller.selectedCategoryId.value = null;
+
+                    if (isFromCC && value == 'transfer') {
+                      // Credit Expense → Card Repayment: CC moves to "to", clear "from"
+                      controller.selectedToAccountId.value = prevFromId;
+                      controller.selectedFromAccountId.value = null;
+                    } else if (isToCC && value == 'expense') {
+                      // Card Repayment → Credit Expense: CC moves back to "from"
+                      controller.selectedFromAccountId.value = prevToId;
+                      controller.selectedToAccountId.value = null;
+                    } else {
+                      controller.selectedFromAccountId.value = null;
+                      controller.selectedToAccountId.value = null;
+                    }
                   }
                 },
               ),
@@ -69,6 +86,13 @@ class AddTransactionScreen extends GetView<TransactionController> {
                       .toList(),
                   onChanged: (value) {
                     controller.selectedFromAccountId.value = value;
+                    final newAcc = controller.accountById(value);
+                    if (newAcc?.isCreditCard == true &&
+                        controller.selectedTransactionType.value == 'income') {
+                      controller.selectedTransactionType.value = 'expense';
+                      controller.selectedToAccountId.value = null;
+                      controller.selectedCategoryId.value = null;
+                    }
                   },
                 ),
                 _CreditCardCaption(
