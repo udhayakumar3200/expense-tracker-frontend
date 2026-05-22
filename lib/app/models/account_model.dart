@@ -125,12 +125,14 @@ class AccountCreateRequest {
   final AccountType type;
   final double? initialBalance;
   final double? creditLimit;
+  final double? outstandingBalance;
 
   const AccountCreateRequest({
     required this.name,
     required this.type,
     this.initialBalance,
     this.creditLimit,
+    this.outstandingBalance,
   });
 
   Map<String, dynamic> toJson() {
@@ -139,6 +141,7 @@ class AccountCreateRequest {
       'type': type.apiValue,
       if (initialBalance != null) 'initial_balance': initialBalance,
       if (creditLimit != null) 'credit_limit': creditLimit,
+      if (outstandingBalance != null) 'outstanding_balance': outstandingBalance,
     };
   }
 }

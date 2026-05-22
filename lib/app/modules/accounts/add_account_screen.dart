@@ -38,13 +38,31 @@ class AddAccountScreen extends GetView<AccountController> {
                   },
                 )),
             AppSpacing.verticalMd,
-            Obx(() => CustomAmountField(
-                  controller: controller.balanceController,
-                  label: controller.selectedAccountType.value == 'credit_card'
-                      ? 'Credit Limit'
-                      : 'Initial Balance',
-                  onSubmitted: (_) => controller.createAccount(),
-                )),
+            Obx(() {
+              final isCreditCard =
+                  controller.selectedAccountType.value == 'credit_card';
+              if (isCreditCard) {
+                return Column(
+                  children: [
+                    CustomAmountField(
+                      controller: controller.balanceController,
+                      label: 'Credit Limit',
+                    ),
+                    AppSpacing.verticalMd,
+                    CustomAmountField(
+                      controller: controller.outstandingBalanceController,
+                      label: 'Outstanding Balance',
+                      onSubmitted: (_) => controller.createAccount(),
+                    ),
+                  ],
+                );
+              }
+              return CustomAmountField(
+                controller: controller.balanceController,
+                label: 'Initial Balance',
+                onSubmitted: (_) => controller.createAccount(),
+              );
+            }),
             AppSpacing.verticalSm,
             Obx(() => ErrorText(
                   message: controller.errorMessage.value,

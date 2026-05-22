@@ -8,6 +8,7 @@ class AccountController extends GetxController {
 
   final nameController = TextEditingController();
   final balanceController = TextEditingController();
+  final outstandingBalanceController = TextEditingController();
 
   final RxString selectedAccountType = 'bank'.obs;
   final RxBool isLoading = false.obs;
@@ -24,12 +25,14 @@ class AccountController extends GetxController {
   void onClose() {
     nameController.dispose();
     balanceController.dispose();
+    outstandingBalanceController.dispose();
     super.onClose();
   }
 
   void clearFields() {
     nameController.clear();
     balanceController.clear();
+    outstandingBalanceController.clear();
     selectedAccountType.value = 'bank';
     errorMessage.value = '';
   }
@@ -42,12 +45,15 @@ class AccountController extends GetxController {
 
     final amount = double.tryParse(balanceController.text.trim()) ?? 0;
     final isCreditCard = selectedAccountType.value == 'credit_card';
+    final outstandingAmount =
+        double.tryParse(outstandingBalanceController.text.trim()) ?? 0;
 
     final response = await _accountRepository.createAccount(
       name: nameController.text.trim(),
       accountType: selectedAccountType.value,
       balance: isCreditCard ? 0 : amount,
       creditLimit: isCreditCard ? amount : null,
+      outstandingBalance: isCreditCard ? outstandingAmount : null,
     );
 
     isLoading.value = false;
@@ -102,6 +108,29 @@ class AccountController extends GetxController {
     if (isCreditCard && parsed <= 0) {
       errorMessage.value = 'Credit limit must be greater than 0';
       return false;
+    }
+
+    if (isCreditCard) {
+      final outstandingText = outstandingBalanceController.text.trim();
+      if (outstandingText.isEmpty) {
+        errorMessage.value = 'Outstanding balance is required';
+        return false;
+      }
+      final parsedOutstanding = double.tryParse(outstandingText);
+      if (parsedOutstanding == null) {
+        errorMessage.value =
+            'Please enter a valid outstanding balance amount';
+        return false;
+      }
+      if (parsedOutstanding < 0) {
+        errorMessage.value = 'Outstanding balance cannot be negative';
+        return false;
+      }
+      if (parsedOutstanding > parsed) {
+        errorMessage.value =
+            'Outstanding balance cannot exceed credit limit';
+        return false;
+      }
     }
 
     return true;
